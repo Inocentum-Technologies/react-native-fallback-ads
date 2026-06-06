@@ -3,7 +3,6 @@ import {
   Image,
   ImageSourcePropType,
   Linking,
-  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -13,33 +12,24 @@ import {
 } from 'react-native';
 import { resolveLink } from '../utils/resolveLink';
 
-export interface FallbackBannerAdProps {
-  // Required content
-  icon: ImageSourcePropType;
-  title: string;
-  subtitle: string;
-
-  // Links
+export interface FallbackImageBannerAdProps {
+  /**
+   * The image to display in the banner.
+   * Supports PNG, JPEG, WEBP, and GIF formats.
+   */
+  image: ImageSourcePropType;
   androidLink?: string;
   iosLink?: string;
   commonLink?: string;
-
-  // Callbacks
   onPress?: (resolvedUrl: string) => void;
   onError?: (error: { type: 'NO_LINK' | 'LINK_FAILED'; message?: string }) => void;
-
-  // Styling & behavior
   style?: ViewStyle;
   testID?: string;
-
-  // NEW: theme control
-  theme?: 'light' | 'dark' | 'auto'; // default: 'light'
+  theme?: 'light' | 'dark' | 'auto';
 }
 
-export const FallbackBannerAd: React.FC<FallbackBannerAdProps> = ({
-  icon,
-  title,
-  subtitle,
+export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
+  image,
   androidLink,
   iosLink,
   commonLink,
@@ -47,7 +37,7 @@ export const FallbackBannerAd: React.FC<FallbackBannerAdProps> = ({
   onError,
   style,
   testID,
-  theme = 'light',
+  theme = 'auto',
 }) => {
   const systemColorScheme = useColorScheme();
   const [imageError, setImageError] = useState(false);
@@ -58,22 +48,17 @@ export const FallbackBannerAd: React.FC<FallbackBannerAdProps> = ({
     const isDark = activeTheme === 'dark';
     return StyleSheet.create({
       container: {
-        width: 300,
+        width: 320,
         height: 50,
         backgroundColor: isDark ? '#1c1c1c' : '#ffffff',
         borderRadius: 8,
-        padding: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-      },
-      iconContainer: {
-        width: 40,
-        height: 40,
+        borderColor: isDark ? '#333333' : '#e0e0e0',
+        borderWidth: 1,
+        overflow: 'hidden',
         justifyContent: 'center',
         alignItems: 'center',
-        marginRight: 8,
       },
-      icon: {
+      image: {
         width: '100%',
         height: '100%',
       },
@@ -83,25 +68,11 @@ export const FallbackBannerAd: React.FC<FallbackBannerAdProps> = ({
         height: '100%',
         justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: 4,
       },
       fallbackIconText: {
         color: isDark ? '#ffffff' : '#000000',
-        fontSize: 10,
-        fontWeight: 'bold',
-      },
-      textContainer: {
-        flex: 1,
-        justifyContent: 'center',
-      },
-      title: {
-        color: isDark ? '#ffffff' : '#000000',
-        fontSize: 14,
-        fontWeight: 'bold',
-      },
-      subtitle: {
-        color: isDark ? '#aaaaaa' : '#666666',
         fontSize: 12,
+        fontWeight: 'bold',
       },
       adLabel: {
         position: 'absolute',
@@ -110,6 +81,10 @@ export const FallbackBannerAd: React.FC<FallbackBannerAdProps> = ({
         fontSize: 10,
         fontWeight: '500',
         color: isDark ? '#777777' : '#999999',
+        backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)',
+        paddingHorizontal: 4,
+        borderRadius: 4,
+        overflow: 'hidden',
       },
     });
   }, [activeTheme]);
@@ -142,32 +117,23 @@ export const FallbackBannerAd: React.FC<FallbackBannerAdProps> = ({
     <TouchableOpacity
       style={[styles.container, style]}
       onPress={handlePress}
+      activeOpacity={0.8}
       testID={testID}
       accessibilityRole="link"
-      accessibilityLabel={`${title}, ${subtitle}, advertisement`}
+      accessibilityLabel="Advertisement banner"
     >
-      <View style={styles.iconContainer}>
-        {imageError ? (
-          <View style={styles.fallbackIcon}>
-            <Text style={styles.fallbackIconText}>Ad</Text>
-          </View>
-        ) : (
-          <Image
-            source={icon}
-            style={styles.icon}
-            resizeMode="contain"
-            onError={() => setImageError(true)}
-          />
-        )}
-      </View>
-      <View style={styles.textContainer}>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
-          {subtitle}
-        </Text>
-      </View>
+      {imageError ? (
+        <View style={styles.fallbackIcon}>
+          <Text style={styles.fallbackIconText}>Ad</Text>
+        </View>
+      ) : (
+        <Image
+          source={image}
+          style={styles.image}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+        />
+      )}
       <Text style={styles.adLabel} pointerEvents="none">
         AD
       </Text>
