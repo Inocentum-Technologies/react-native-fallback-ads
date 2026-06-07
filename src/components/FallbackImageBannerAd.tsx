@@ -72,56 +72,37 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
     if (!hasMultipleImages) return;
 
     const interval = setInterval(() => {
-      if (animationType === 'none') {
-        setCurrentIndex((prev) => (prev + 1) % displayImages.length);
-      } else if (animationType === 'fade') {
-        Animated.sequence([
-          Animated.timing(animValue, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start(({ finished }) => {
-          if (finished) {
-            setCurrentIndex((prev) => (prev + 1) % displayImages.length);
-            Animated.timing(animValue, {
-              toValue: 0,
-              duration: 300,
-              useNativeDriver: true,
-            }).start();
-          }
-        });
-      } else if (animationType === 'flip') {
-        Animated.sequence([
-          Animated.timing(animValue, {
-            toValue: 0.5,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ]).start(({ finished }) => {
-          if (finished) {
-            setCurrentIndex((prev) => (prev + 1) % displayImages.length);
-            Animated.timing(animValue, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: true,
-            }).start(() => {
-              // Reset back to 0 without animation so we can flip again
-              animValue.setValue(0);
-            });
-          }
-        });
-      } else if (animationType === '3d-flip') {
-        Animated.timing(animValue, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }).start(({ finished }) => {
-          if (finished) {
-            setCurrentIndex((prev) => (prev + 1) % displayImages.length);
-            animValue.setValue(0);
-          }
-        });
+      const nextIndex = () => setCurrentIndex((prev) => (prev + 1) % displayImages.length);
+      const resetAnim = () => animValue.setValue(0);
+
+      switch (animationType) {
+        case 'none':
+          nextIndex();
+          break;
+        case 'fade':
+          Animated.timing(animValue, { toValue: 1, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+            if (finished) {
+              nextIndex();
+              Animated.timing(animValue, { toValue: 0, duration: 300, useNativeDriver: true }).start();
+            }
+          });
+          break;
+        case 'flip':
+          Animated.timing(animValue, { toValue: 0.5, duration: 300, useNativeDriver: true }).start(({ finished }) => {
+            if (finished) {
+              nextIndex();
+              Animated.timing(animValue, { toValue: 1, duration: 300, useNativeDriver: true }).start(() => resetAnim());
+            }
+          });
+          break;
+        case '3d-flip':
+          Animated.timing(animValue, { toValue: 1, duration: 1000, useNativeDriver: true }).start(({ finished }) => {
+            if (finished) {
+              nextIndex();
+              resetAnim();
+            }
+          });
+          break;
       }
     }, switchInterval);
 
@@ -169,9 +150,9 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
         top: 4,
         right: 8,
         fontSize: 10,
-        fontWeight: '500',
-        color: isDark ? '#777777' : '#999999',
-        backgroundColor: isDark ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.7)',
+        fontWeight: 'bold',
+        color: isDark ? '#eeeeee' : '#222222',
+        backgroundColor: isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.8)',
         paddingHorizontal: 4,
         borderRadius: 4,
         overflow: 'hidden',
@@ -209,159 +190,102 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
   const animatedStyle = useMemo(() => {
     if (!hasMultipleImages || animationType === 'none' || animationType === '3d-flip') return {};
 
-    if (animationType === 'fade') {
-      return {
-        opacity: animValue.interpolate({
-          inputRange: [0, 1],
-          outputRange: [1, 0],
-        }),
-      };
+    switch (animationType) {
+      case 'fade':
+        return {
+          opacity: animValue.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+        };
+      case 'flip':
+        return {
+          transform: [
+            {
+              rotateX: animValue.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: ['0deg', '-90deg', '0deg'],
+              }),
+            },
+          ],
+        };
+      default:
+        return {};
     }
+  }, [hasMultipleImages, animationType, animValue]);
 
-    if (animationType === 'flip') {
-      return {
+  const { faceAStyle, faceBStyle } = useMemo(() => {
+    if (animationType !== '3d-flip') return { faceAStyle: {}, faceBStyle: {} };
+
+    const translateYVal = layoutHeight / 2;
+    const d = 400; // perspective distance
+
+    const getScale = (thetaDeg: number, isFaceA: boolean) => {
+      const theta = (thetaDeg * Math.PI) / 180;
+      const sinT = Math.sin(theta);
+      const cosT = Math.cos(theta);
+
+      const zCorner = -translateYVal + translateYVal * sinT + translateYVal * cosT;
+      const sCorner = d / (d - zCorner);
+
+      const zLocalActual = isFaceA ? translateYVal * sinT : translateYVal * cosT;
+      const sActual = d / (d - zLocalActual);
+
+      const boxScale = thetaDeg === 45 ? 0.8 : (thetaDeg === 30 || thetaDeg === 60 ? 0.866 : 1.0);
+
+      return boxScale * (sCorner / sActual);
+    };
+
+    const inputRange = [0, 0.333, 0.5, 0.667, 1];
+
+    return {
+      faceAStyle: {
+        position: 'absolute' as const,
+        backfaceVisibility: 'hidden' as const,
         transform: [
+          { perspective: d },
+          {
+            scale: animValue.interpolate({
+              inputRange,
+              outputRange: [0, 30, 45, 60, 90].map((deg) => getScale(deg, true)),
+            }),
+          },
+          {
+            translateY: animValue.interpolate({
+              inputRange,
+              outputRange: [0, -0.5, -0.7071, -0.866, -1].map((val) => val * translateYVal),
+            }),
+          },
           {
             rotateX: animValue.interpolate({
-              inputRange: [0, 0.5, 1],
-              outputRange: ['0deg', '-90deg', '0deg'],
+              inputRange: [0, 1],
+              outputRange: ['0deg', '90deg'],
             }),
           },
         ],
-      };
-    }
-
-    return {};
-  }, [hasMultipleImages, animationType, animValue]);
-
-  const faceAStyle = useMemo(() => {
-    if (animationType !== '3d-flip') return {};
-    const translateYVal = layoutHeight / 2;
-    const d = 400; // perspective distance
-
-    // Helper to compute scale at angle theta (in degrees)
-    const getScale = (thetaDeg: number, isFaceA: boolean) => {
-      const theta = (thetaDeg * Math.PI) / 180;
-      const sinT = Math.sin(theta);
-      const cosT = Math.cos(theta);
-
-      // Box center is at Z = -translateYVal.
-      // Corner is offset from box center by translateYVal * sinT in Z and translateYVal * cosT in Z.
-      const zCorner = -translateYVal + translateYVal * sinT + translateYVal * cosT;
-      const sCorner = d / (d - zCorner);
-
-      // In React Native, the view is projected relative to its local center.
-      // The local Z coordinate of the edge is translateYVal * sinT for Face A, and translateYVal * cosT for Face B.
-      const zLocalActual = isFaceA ? translateYVal * sinT : translateYVal * cosT;
-      const sActual = d / (d - zLocalActual);
-
-      // Base box scale (shrinks to 0.8 at 45 deg)
-      let boxScale = 1.0;
-      if (thetaDeg === 30 || thetaDeg === 60) boxScale = 0.866;
-      else if (thetaDeg === 45) boxScale = 0.8;
-
-      return boxScale * (sCorner / sActual);
-    };
-
-    return {
-      position: 'absolute' as const,
-      backfaceVisibility: 'hidden' as const,
-      transform: [
-        { perspective: d },
-        {
-          scale: animValue.interpolate({
-            inputRange: [0, 0.333, 0.5, 0.667, 1],
-            outputRange: [
-              getScale(0, true),
-              getScale(30, true),
-              getScale(45, true),
-              getScale(60, true),
-              getScale(90, true),
-            ],
-          }),
-        },
-        {
-          translateY: animValue.interpolate({
-            inputRange: [0, 0.333, 0.5, 0.667, 1],
-            outputRange: [
-              0,
-              -0.5 * translateYVal,
-              -0.7071 * translateYVal,
-              -0.866 * translateYVal,
-              -translateYVal,
-            ],
-          }),
-        },
-        {
-          rotateX: animValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['0deg', '90deg'],
-          }),
-        },
-      ],
-    };
-  }, [animationType, animValue, layoutHeight]);
-
-  const faceBStyle = useMemo(() => {
-    if (animationType !== '3d-flip') return {};
-    const translateYVal = layoutHeight / 2;
-    const d = 400; // perspective distance
-
-    // Helper to compute scale at angle theta (in degrees)
-    const getScale = (thetaDeg: number, isFaceA: boolean) => {
-      const theta = (thetaDeg * Math.PI) / 180;
-      const sinT = Math.sin(theta);
-      const cosT = Math.cos(theta);
-
-      const zCorner = -translateYVal + translateYVal * sinT + translateYVal * cosT;
-      const sCorner = d / (d - zCorner);
-
-      const zLocalActual = isFaceA ? translateYVal * sinT : translateYVal * cosT;
-      const sActual = d / (d - zLocalActual);
-
-      let boxScale = 1.0;
-      if (thetaDeg === 30 || thetaDeg === 60) boxScale = 0.866;
-      else if (thetaDeg === 45) boxScale = 0.8;
-
-      return boxScale * (sCorner / sActual);
-    };
-
-    return {
-      position: 'absolute' as const,
-      backfaceVisibility: 'hidden' as const,
-      transform: [
-        { perspective: d },
-        {
-          scale: animValue.interpolate({
-            inputRange: [0, 0.333, 0.5, 0.667, 1],
-            outputRange: [
-              getScale(0, false),
-              getScale(30, false),
-              getScale(45, false),
-              getScale(60, false),
-              getScale(90, false),
-            ],
-          }),
-        },
-        {
-          translateY: animValue.interpolate({
-            inputRange: [0, 0.333, 0.5, 0.667, 1],
-            outputRange: [
-              translateYVal,
-              0.866 * translateYVal,
-              0.7071 * translateYVal,
-              0.5 * translateYVal,
-              0,
-            ],
-          }),
-        },
-        {
-          rotateX: animValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: ['-90deg', '0deg'],
-          }),
-        },
-      ],
+      },
+      faceBStyle: {
+        position: 'absolute' as const,
+        backfaceVisibility: 'hidden' as const,
+        transform: [
+          { perspective: d },
+          {
+            scale: animValue.interpolate({
+              inputRange,
+              outputRange: [0, 30, 45, 60, 90].map((deg) => getScale(deg, false)),
+            }),
+          },
+          {
+            translateY: animValue.interpolate({
+              inputRange,
+              outputRange: [1, 0.866, 0.7071, 0.5, 0].map((val) => val * translateYVal),
+            }),
+          },
+          {
+            rotateX: animValue.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['-90deg', '0deg'],
+            }),
+          },
+        ],
+      },
     };
   }, [animationType, animValue, layoutHeight]);
 
