@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   Animated,
   Image,
@@ -12,6 +12,7 @@ import {
   useColorScheme,
 } from 'react-native';
 import { resolveLink } from '../utils/resolveLink';
+import { useAdAnimation } from '../hooks/useAdAnimation';
 
 export interface FallbackImageBannerAdProps {
   /**
@@ -60,54 +61,24 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [layoutHeight, setLayoutHeight] = useState(50);
 
-  const animValue = useRef(new Animated.Value(0)).current;
-
   const displayImages = useMemo(() => {
     return images && images.length > 0 ? images : (image ? [image] : []);
   }, [images, image]);
 
   const hasMultipleImages = displayImages.length > 1;
 
-  useEffect(() => {
-    if (!hasMultipleImages) return;
+  const handleNextIndex = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % displayImages.length);
+  }, [displayImages.length]);
 
-    const interval = setInterval(() => {
-      const nextIndex = () => setCurrentIndex((prev) => (prev + 1) % displayImages.length);
-      const resetAnim = () => animValue.setValue(0);
-
-      switch (animationType) {
-        case 'none':
-          nextIndex();
-          break;
-        case 'fade':
-          Animated.timing(animValue, { toValue: 1, duration: 300, useNativeDriver: true }).start(({ finished }) => {
-            if (finished) {
-              nextIndex();
-              Animated.timing(animValue, { toValue: 0, duration: 300, useNativeDriver: true }).start();
-            }
-          });
-          break;
-        case 'flip':
-          Animated.timing(animValue, { toValue: 0.5, duration: 300, useNativeDriver: true }).start(({ finished }) => {
-            if (finished) {
-              nextIndex();
-              Animated.timing(animValue, { toValue: 1, duration: 300, useNativeDriver: true }).start(() => resetAnim());
-            }
-          });
-          break;
-        case '3d-flip':
-          Animated.timing(animValue, { toValue: 1, duration: 1000, useNativeDriver: true }).start(({ finished }) => {
-            if (finished) {
-              nextIndex();
-              resetAnim();
-            }
-          });
-          break;
-      }
-    }, switchInterval);
-
-    return () => clearInterval(interval);
-  }, [hasMultipleImages, displayImages.length, switchInterval, animationType, animValue]);
+  const { animValue, animatedStyle, faceAStyle, faceBStyle } = useAdAnimation({
+    animationType,
+    hasMultipleImages,
+    imageCount: displayImages.length,
+    switchInterval,
+    layoutHeight,
+    onNextIndex: handleNextIndex,
+  });
 
   const activeTheme = theme === 'auto' ? (systemColorScheme || 'light') : theme;
 
@@ -187,81 +158,7 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
   const currentImageSource = displayImages[currentIndex];
   const nextImageSource = displayImages[(currentIndex + 1) % displayImages.length];
 
-  const animatedStyle = useMemo(() => {
-    if (!hasMultipleImages || animationType === 'none' || animationType === '3d-flip') return {};
 
-    switch (animationType) {
-      case 'fade':
-        return {
-          opacity: animValue.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
-        };
-      case 'flip':
-        return {
-          transform: [
-            {
-              rotateX: animValue.interpolate({
-                inputRange: [0, 0.5, 1],
-                outputRange: ['0deg', '-90deg', '0deg'],
-              }),
-            },
-          ],
-        };
-      default:
-        return {};
-    }
-  }, [hasMultipleImages, animationType, animValue]);
-
-  const { faceAStyle, faceBStyle } = useMemo(() => {
-    if (animationType !== '3d-flip') return { faceAStyle: {}, faceBStyle: {} };
-
-    const d = 1000; // perspective distance
-    const translationVal = (layoutHeight / 2) - 0.5;
-
-    const translateZNegative = [
-      { rotateX: '-90deg' },
-      { translateY: translationVal },
-      { rotateX: '90deg' },
-    ];
-
-    const translateZPositive = [
-      { rotateX: '-90deg' },
-      { translateY: -translationVal },
-      { rotateX: '90deg' },
-    ];
-
-    return {
-      faceAStyle: {
-        position: 'absolute' as const,
-        backfaceVisibility: 'hidden' as const,
-        transform: [
-          { perspective: d },
-          ...translateZNegative,
-          {
-            rotateX: animValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['0deg', '90deg'],
-            }),
-          },
-          ...translateZPositive,
-        ],
-      },
-      faceBStyle: {
-        position: 'absolute' as const,
-        backfaceVisibility: 'hidden' as const,
-        transform: [
-          { perspective: d },
-          ...translateZNegative,
-          {
-            rotateX: animValue.interpolate({
-              inputRange: [0, 1],
-              outputRange: ['-90deg', '0deg'],
-            }),
-          },
-          ...translateZPositive,
-        ],
-      },
-    };
-  }, [animationType, animValue, layoutHeight]);
 
   return (
     <TouchableOpacity
