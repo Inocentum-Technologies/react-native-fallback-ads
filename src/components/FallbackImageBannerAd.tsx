@@ -214,26 +214,20 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
   const { faceAStyle, faceBStyle } = useMemo(() => {
     if (animationType !== '3d-flip') return { faceAStyle: {}, faceBStyle: {} };
 
-    const translateYVal = layoutHeight / 2;
-    const d = 400; // perspective distance
+    const d = 1000; // perspective distance
+    const translationVal = (layoutHeight / 2) - 0.5;
 
-    const getScale = (thetaDeg: number, isFaceA: boolean) => {
-      const theta = (thetaDeg * Math.PI) / 180;
-      const sinT = Math.sin(theta);
-      const cosT = Math.cos(theta);
+    const translateZNegative = [
+      { rotateX: '-90deg' },
+      { translateY: translationVal },
+      { rotateX: '90deg' },
+    ];
 
-      const zCorner = -translateYVal + translateYVal * sinT + translateYVal * cosT;
-      const sCorner = d / (d - zCorner);
-
-      const zLocalActual = isFaceA ? translateYVal * sinT : translateYVal * cosT;
-      const sActual = d / (d - zLocalActual);
-
-      const boxScale = thetaDeg === 45 ? 0.8 : (thetaDeg === 30 || thetaDeg === 60 ? 0.866 : 1.0);
-
-      return boxScale * (sCorner / sActual);
-    };
-
-    const inputRange = [0, 0.333, 0.5, 0.667, 1];
+    const translateZPositive = [
+      { rotateX: '-90deg' },
+      { translateY: -translationVal },
+      { rotateX: '90deg' },
+    ];
 
     return {
       faceAStyle: {
@@ -241,24 +235,14 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
         backfaceVisibility: 'hidden' as const,
         transform: [
           { perspective: d },
-          {
-            scale: animValue.interpolate({
-              inputRange,
-              outputRange: [0, 30, 45, 60, 90].map((deg) => getScale(deg, true)),
-            }),
-          },
-          {
-            translateY: animValue.interpolate({
-              inputRange,
-              outputRange: [0, -0.5, -0.7071, -0.866, -1].map((val) => val * translateYVal),
-            }),
-          },
+          ...translateZNegative,
           {
             rotateX: animValue.interpolate({
               inputRange: [0, 1],
               outputRange: ['0deg', '90deg'],
             }),
           },
+          ...translateZPositive,
         ],
       },
       faceBStyle: {
@@ -266,24 +250,14 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
         backfaceVisibility: 'hidden' as const,
         transform: [
           { perspective: d },
-          {
-            scale: animValue.interpolate({
-              inputRange,
-              outputRange: [0, 30, 45, 60, 90].map((deg) => getScale(deg, false)),
-            }),
-          },
-          {
-            translateY: animValue.interpolate({
-              inputRange,
-              outputRange: [1, 0.866, 0.7071, 0.5, 0].map((val) => val * translateYVal),
-            }),
-          },
+          ...translateZNegative,
           {
             rotateX: animValue.interpolate({
               inputRange: [0, 1],
               outputRange: ['-90deg', '0deg'],
             }),
           },
+          ...translateZPositive,
         ],
       },
     };
