@@ -366,13 +366,11 @@ This library is free and open-source. If it saves you time, please consider supp
 
 [![Get it on Google Play](https://img.shields.io/badge/Google%20Play-CashBook-green?logo=google-play&logoColor=white)](https://play.google.com/store/apps/details?id=in.inocentum.cashbook)
 
-You can show your support in three easy ways:
+You can show your support in two easy ways:
 
-1. **⭐ Download & leave a 5-star review** — it helps the app reach more people and keeps us motivated to maintain this library.
+1. **⭐ Try our app & share your feedback** — we invite you to try our new app. If you like it, please consider leaving a review or providing us feedback directly from the app. It helps the app reach more people and keeps us motivated to maintain this library.
 
 2. **💎 Purchase the Premium Add-on** — unlock extra features inside CashBook and directly fund continued development of open-source tools like this one.
-
-3. **📢 Display one of our ads in your app** — a free, zero-effort way to give back. Ready-to-use code examples for every ad format are in **[SUPPORT.md](SUPPORT.md)**.
 
 👉 [Open CashBook on Google Play](https://play.google.com/store/apps/details?id=in.inocentum.cashbook)
 
