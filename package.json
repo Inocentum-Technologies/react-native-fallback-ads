@@ -1,6 +1,6 @@
 {
   "name": "react-native-fallback-ads",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Fallback ads for React Native & Expo (JS only)",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
