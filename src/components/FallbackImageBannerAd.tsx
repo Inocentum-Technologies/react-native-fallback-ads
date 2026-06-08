@@ -11,7 +11,7 @@ import {
   ViewStyle,
   useColorScheme,
 } from 'react-native';
-import { resolveLink } from '../utils/resolveLink';
+
 import { useAdAnimation } from '../hooks/useAdAnimation';
 
 export interface FallbackImageBannerAdProps {
@@ -32,9 +32,7 @@ export interface FallbackImageBannerAdProps {
    * The animation type to use when switching images. Default is 'flip'.
    */
   animationType?: 'flip' | '3d-flip' | 'fade' | 'none';
-  androidLink?: string;
-  iosLink?: string;
-  commonLink?: string;
+  link?: string;
   onPress?: (resolvedUrl: string) => void;
   onError?: (error: { type: 'NO_LINK' | 'LINK_FAILED' | 'NO_IMAGE'; message?: string }) => void;
   style?: ViewStyle;
@@ -47,9 +45,7 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
   images,
   switchInterval = 5000,
   animationType = 'flip',
-  androidLink,
-  iosLink,
-  commonLink,
+  link,
   onPress,
   onError,
   style,
@@ -132,20 +128,18 @@ export const FallbackImageBannerAd: React.FC<FallbackImageBannerAdProps> = ({
   }, [activeTheme]);
 
   const handlePress = async () => {
-    const resolvedUrl = resolveLink(androidLink, iosLink, commonLink);
-
-    if (!resolvedUrl) {
-      onError?.({ type: 'NO_LINK', message: 'No valid link provided for this platform.' });
+    if (!link) {
+      onError?.({ type: 'NO_LINK', message: 'No valid link provided.' });
       return;
     }
 
     try {
-      const canOpen = await Linking.canOpenURL(resolvedUrl);
+      const canOpen = await Linking.canOpenURL(link);
       if (canOpen) {
-        await Linking.openURL(resolvedUrl);
-        onPress?.(resolvedUrl);
+        await Linking.openURL(link);
+        onPress?.(link);
       } else {
-        onError?.({ type: 'LINK_FAILED', message: `Cannot open URL: ${resolvedUrl}` });
+        onError?.({ type: 'LINK_FAILED', message: `Cannot open URL: ${link}` });
       }
     } catch (err) {
       onError?.({

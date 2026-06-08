@@ -12,7 +12,7 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { resolveLink } from '../utils/resolveLink';
+
 
 export interface FallbackFullscreenAdProps {
   /**
@@ -33,9 +33,7 @@ export interface FallbackFullscreenAdProps {
    * Callback when the ad is dismissed (close button pressed or background tapped).
    */
   onDismiss?: () => void;
-  androidLink?: string;
-  iosLink?: string;
-  commonLink?: string;
+  link?: string;
   onPress?: (resolvedUrl: string) => void;
   onError?: (error: { type: 'NO_LINK' | 'LINK_FAILED' | 'NO_IMAGE'; message?: string }) => void;
   /**
@@ -56,9 +54,7 @@ export const FallbackFullscreenAd: React.FC<FallbackFullscreenAdProps> = ({
   landscapeImage,
   visible = true,
   onDismiss,
-  androidLink,
-  iosLink,
-  commonLink,
+  link,
   onPress,
   onError,
   showCloseButton = true,
@@ -205,20 +201,18 @@ export const FallbackFullscreenAd: React.FC<FallbackFullscreenAdProps> = ({
   }, [activeTheme]);
 
   const handlePress = async () => {
-    const resolvedUrl = resolveLink(androidLink, iosLink, commonLink);
-
-    if (!resolvedUrl) {
-      onError?.({ type: 'NO_LINK', message: 'No valid link provided for this platform.' });
+    if (!link) {
+      onError?.({ type: 'NO_LINK', message: 'No valid link provided.' });
       return;
     }
 
     try {
-      const canOpen = await Linking.canOpenURL(resolvedUrl);
+      const canOpen = await Linking.canOpenURL(link);
       if (canOpen) {
-        await Linking.openURL(resolvedUrl);
-        onPress?.(resolvedUrl);
+        await Linking.openURL(link);
+        onPress?.(link);
       } else {
-        onError?.({ type: 'LINK_FAILED', message: `Cannot open URL: ${resolvedUrl}` });
+        onError?.({ type: 'LINK_FAILED', message: `Cannot open URL: ${link}` });
       }
     } catch (err) {
       onError?.({

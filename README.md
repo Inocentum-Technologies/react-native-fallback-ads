@@ -77,12 +77,12 @@ const bannerRef = useRef<FallbackBannerAdRef>(null);
       icon: require('./assets/app-icon.png'),
       title: 'My Awesome App',
       subtitle: 'Download it free today',
-      commonLink: 'https://example.com/app',
+      link: 'https://example.com/app',
     },
     {
       type: 'image',
       image: require('./assets/banner.png'),
-      commonLink: 'https://example.com/promo',
+      link: 'https://example.com/promo',
     },
   ]}
 />
@@ -119,7 +119,7 @@ import { FallbackTextBannerAd } from 'react-native-fallback-ads';
   icon={require('./assets/icon.png')}
   title="Try Our Pro Plan"
   subtitle="Unlock all features — starting at $2.99"
-  commonLink="https://example.com/pro"
+  link="https://example.com/pro"
   onPress={(url) => console.log('Opened:', url)}
   onError={(err) => console.warn('Ad error:', err)}
   theme="auto"
@@ -133,9 +133,7 @@ import { FallbackTextBannerAd } from 'react-native-fallback-ads';
 | `icon` | `ImageSourcePropType` | **required** | App icon or logo displayed on the left |
 | `title` | `string` | **required** | Primary text (bold) |
 | `subtitle` | `string` | **required** | Secondary text |
-| `androidLink` | `string` | — | Deep-link used on Android |
-| `iosLink` | `string` | — | Deep-link used on iOS |
-| `commonLink` | `string` | — | Fallback link for all platforms |
+| `link` | `string` | — | The destination link to open when the ad is tapped |
 | `onPress` | `(url: string) => void` | — | Called after the link is successfully opened |
 | `onError` | `(err: AdError) => void` | — | Called when the link cannot be resolved or opened |
 | `style` | `ViewStyle` | — | Override container styles |
@@ -154,7 +152,7 @@ import { FallbackImageBannerAd } from 'react-native-fallback-ads';
 // Single image
 <FallbackImageBannerAd
   image={require('./assets/banner.png')}
-  commonLink="https://example.com"
+  link="https://example.com"
   theme="auto"
 />
 
@@ -167,7 +165,7 @@ import { FallbackImageBannerAd } from 'react-native-fallback-ads';
   ]}
   switchInterval={4000}
   animationType="3d-flip"
-  commonLink="https://example.com"
+  link="https://example.com"
   onPress={(url) => console.log('Tapped:', url)}
 />
 ```
@@ -180,9 +178,7 @@ import { FallbackImageBannerAd } from 'react-native-fallback-ads';
 | `images` | `ImageSourcePropType[]` | — | Array of images to cycle (overrides `image`) |
 | `switchInterval` | `number` | `5000` | Milliseconds between image switches |
 | `animationType` | `'flip' \| '3d-flip' \| 'fade' \| 'none'` | `'flip'` | Transition animation |
-| `androidLink` | `string` | — | Deep-link used on Android |
-| `iosLink` | `string` | — | Deep-link used on iOS |
-| `commonLink` | `string` | — | Fallback link for all platforms |
+| `link` | `string` | — | The destination link to open when the ad is tapped |
 | `onPress` | `(url: string) => void` | — | Called after the link is successfully opened |
 | `onError` | `(err: AdError) => void` | — | Called on link or image errors |
 | `style` | `ViewStyle` | — | Override container styles |
@@ -205,9 +201,13 @@ import { FallbackMrecAd } from 'react-native-fallback-ads';
   ]}
   switchInterval={6000}
   animationType="3d-flip-horizontal"
-  androidLink="market://details?id=com.example.app"
-  iosLink="https://apps.apple.com/app/id123456789"
-  commonLink="https://example.com"
+  link={
+    Platform.select({
+      android: 'market://details?id=com.example.app',
+      ios: 'https://apps.apple.com/app/id123456789',
+      default: 'https://example.com',
+    })
+  }
   onPress={(url) => console.log('Opened:', url)}
   theme="dark"
 />
@@ -241,7 +241,7 @@ const [adVisible, setAdVisible] = useState(false);
   landscapeImage={require('./assets/interstitial-landscape.png')}
   showCloseButton={true}
   closeDelay={5}
-  commonLink="https://example.com/promo"
+  link="https://example.com/promo"
   onPress={(url) => console.log('Ad tapped:', url)}
   onDismiss={() => setAdVisible(false)}
   onError={(err) => console.warn('Ad error:', err)}
@@ -259,9 +259,7 @@ const [adVisible, setAdVisible] = useState(false);
 | `onDismiss` | `() => void` | — | Called when the close button is pressed or back button is tapped (Android) |
 | `showCloseButton` | `boolean` | `true` | Whether to show the close button |
 | `closeDelay` | `number` | `5` | Seconds before the close button becomes tappable; a countdown badge is shown during this period |
-| `androidLink` | `string` | — | Deep-link used on Android |
-| `iosLink` | `string` | — | Deep-link used on iOS |
-| `commonLink` | `string` | — | Fallback link for all platforms |
+| `link` | `string` | — | The destination link to open when the ad is tapped |
 | `onPress` | `(url: string) => void` | — | Called after the link is successfully opened |
 | `onError` | `(err: AdError) => void` | — | Called on link or image errors |
 | `theme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Color scheme |
@@ -295,14 +293,7 @@ const url = resolveLink(
 
 ## Link Resolution
 
-Every ad component resolves destination links using the following priority order:
-
-1. **`androidLink`** — used when `Platform.OS === 'android'`
-2. **`iosLink`** — used when `Platform.OS === 'ios'`
-3. **`commonLink`** — used on any platform when no platform-specific link is set
-4. **`null`** — `onError` is called with `{ type: 'NO_LINK' }`
-
-You can provide any combination. Providing only `commonLink` is perfectly valid for cross-platform links like web URLs.
+You can use React Native's `Platform.select` directly in the `link` prop to provide platform-specific URLs, or you can use our included `resolveLink` helper manually if needed.
 
 ---
 

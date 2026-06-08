@@ -42,7 +42,7 @@ import { FallbackTextBannerAd } from 'react-native-fallback-ads';
   icon={{ uri: 'https://placehold.co/40x40.png' }}
   title="CashBook – Expense Tracker"
   subtitle="Track expenses easily. Download free!"
-  androidLink="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
+  link="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
   onPress={(url) => console.log('CashBook ad tapped:', url)}
   onError={(err) => console.warn('Ad error:', err)}
   theme="auto"
@@ -62,7 +62,7 @@ import { FallbackImageBannerAd } from 'react-native-fallback-ads';
 
 <FallbackImageBannerAd
   image={{ uri: 'https://placehold.co/320x50.png' }}
-  androidLink="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
+  link="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
   onPress={(url) => console.log('CashBook ad tapped:', url)}
   onError={(err) => console.warn('Ad error:', err)}
   theme="auto"
@@ -82,7 +82,7 @@ import { FallbackImageBannerAd } from 'react-native-fallback-ads';
   ]}
   switchInterval={5000}
   animationType="3d-flip"
-  androidLink="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
+  link="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
   onPress={(url) => console.log('CashBook ad tapped:', url)}
   onError={(err) => console.warn('Ad error:', err)}
   theme="auto"
@@ -102,7 +102,7 @@ import { FallbackMrecAd } from 'react-native-fallback-ads';
 
 <FallbackMrecAd
   image={{ uri: 'https://placehold.co/300x250.png' }}
-  androidLink="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
+  link="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
   onPress={(url) => console.log('CashBook ad tapped:', url)}
   onError={(err) => console.warn('Ad error:', err)}
   theme="auto"
@@ -121,7 +121,7 @@ import { FallbackMrecAd } from 'react-native-fallback-ads';
   ]}
   switchInterval={6000}
   animationType="fade"
-  androidLink="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
+  link="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
   onPress={(url) => console.log('CashBook ad tapped:', url)}
   onError={(err) => console.warn('Ad error:', err)}
   theme="auto"
@@ -147,7 +147,7 @@ const [adVisible, setAdVisible] = useState(true);
   landscapeImage={{ uri: 'https://placehold.co/1920x1080.png' }}
   showCloseButton={true}
   closeDelay={5}
-  androidLink="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
+  link="https://play.google.com/store/apps/details?id=in.inocentum.cashbook"
   onPress={(url) => console.log('CashBook ad tapped:', url)}
   onDismiss={() => setAdVisible(false)}
   onError={(err) => console.warn('Ad error:', err)}
@@ -178,19 +178,19 @@ const bannerRef = useRef<FallbackBannerAdRef>(null);
       icon: { uri: 'https://placehold.co/40x40.png' },
       title: 'CashBook – Expense Tracker',
       subtitle: 'Track expenses easily. Download free!',
-      androidLink: 'https://play.google.com/store/apps/details?id=in.inocentum.cashbook',
+      link: 'https://play.google.com/store/apps/details?id=in.inocentum.cashbook',
     },
     // Image variant 1
     {
       type: 'image',
       image: { uri: 'https://placehold.co/320x50/4CAF50/ffffff.png?text=CashBook+Banner+1' },
-      androidLink: 'https://play.google.com/store/apps/details?id=in.inocentum.cashbook',
+      link: 'https://play.google.com/store/apps/details?id=in.inocentum.cashbook',
     },
     // Image variant 2
     {
       type: 'image',
       image: { uri: 'https://placehold.co/320x50/2196F3/ffffff.png?text=CashBook+Banner+2' },
-      androidLink: 'https://play.google.com/store/apps/details?id=in.inocentum.cashbook',
+      link: 'https://play.google.com/store/apps/details?id=in.inocentum.cashbook',
     },
   ]}
   onError={(err) => console.warn('Ad error:', err)}
