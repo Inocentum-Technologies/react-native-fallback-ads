@@ -98,6 +98,8 @@ bannerRef.current?.refresh();
 | `data` | `BannerAdItem[]` | **required** | Array of text or image ad configs |
 | `style` | `ViewStyle` | — | Override container styles |
 | `theme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Color scheme |
+| `mode` | `'manual' \| 'auto'` | `'manual'` | Refresh mode. If `'auto'`, the ad will automatically refresh every `refreshInterval` ms |
+| `refreshInterval` | `number` | `5000` | Refresh interval in milliseconds (applicable when `mode` is `'auto'`) |
 | `testID` | `string` | — | Test identifier |
 
 #### Ref methods
@@ -227,7 +229,13 @@ All other props are identical to [`FallbackImageBannerAd`](#fallbackimagebannera
 
 ### FallbackFullscreenAd
 
-A full-screen interstitial ad rendered inside a React Native `Modal`. Supports portrait and landscape images, an optional close button with a configurable countdown delay, and orientation-aware image switching.
+A full-screen interstitial ad rendered inside a React Native `Modal`. Supports portrait and landscape image or video formats. 
+
+#### Video & Rewarded Ad Features
+- **Orientation Lock for Videos**: You can specify separate portrait and landscape video sources. To avoid jarring visual changes, the video's active orientation is locked at the moment it starts playing based on the device's current orientation. It continues playing in that orientation even if the device rotates.
+- **Rewarded Ad Mode**: Provide an `onReward` callback and set `rewarded={true}`.
+  - *Watch to End (Default)*: User must watch the video until it completes to earn the reward. When the video ends, the reward is granted and the ad automatically closes.
+  - *Explicit Close Delay*: If `closeDelay` is explicitly set (e.g., `closeDelay={15}`), a countdown is shown. When the countdown completes, the ad automatically closes and grants the reward.
 
 ```tsx
 import { useState } from 'react';
@@ -235,6 +243,7 @@ import { FallbackFullscreenAd } from 'react-native-fallback-ads';
 
 const [adVisible, setAdVisible] = useState(false);
 
+// Image Ad Example
 <FallbackFullscreenAd
   visible={adVisible}
   portraitImage={require('./assets/interstitial-portrait.png')}
@@ -242,7 +251,16 @@ const [adVisible, setAdVisible] = useState(false);
   showCloseButton={true}
   closeDelay={5}
   link="https://example.com/promo"
-  onPress={(url) => console.log('Ad tapped:', url)}
+  onDismiss={() => setAdVisible(false)}
+/>
+
+// Rewarded Video Ad Example (Watch to completion)
+<FallbackFullscreenAd
+  visible={adVisible}
+  portraitVideo={require('./assets/video-portrait.mp4')}
+  landscapeVideo={require('./assets/video-landscape.mp4')}
+  rewarded={true}
+  onReward={() => console.log('Reward Earned!')}
   onDismiss={() => setAdVisible(false)}
   onError={(err) => console.warn('Ad error:', err)}
   theme="auto"
@@ -253,15 +271,19 @@ const [adVisible, setAdVisible] = useState(false);
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `portraitImage` | `ImageSourcePropType` | **required** | Image shown in portrait orientation |
+| `portraitImage` | `ImageSourcePropType` | — | Image shown in portrait orientation. Required if video is not used |
 | `landscapeImage` | `ImageSourcePropType` | — | Image shown in landscape; falls back to `portraitImage` |
+| `portraitVideo` | `any` | — | Video source (local require or URL object) played in portrait. Requires `react-native-video` or `expo-av` in the host app |
+| `landscapeVideo` | `any` | — | Video source played in landscape; falls back to `portraitVideo` |
+| `rewarded` | `boolean` | `false` | Whether this is a rewarded video ad |
+| `onReward` | `() => void` | — | Callback triggered when the reward is earned |
 | `visible` | `boolean` | `true` | Controls modal visibility |
-| `onDismiss` | `() => void` | — | Called when the close button is pressed or back button is tapped (Android) |
+| `onDismiss` | `() => void` | — | Called when the close button is pressed, the back button is tapped, or a rewarded video completes |
 | `showCloseButton` | `boolean` | `true` | Whether to show the close button |
-| `closeDelay` | `number` | `5` | Seconds before the close button becomes tappable; a countdown badge is shown during this period |
+| `closeDelay` | `number` | `5` (image) / — (video) | Seconds before the close button becomes tappable (normal ads), or seconds before auto-closing and rewarding (rewarded ads) |
 | `link` | `string` | — | The destination link to open when the ad is tapped |
 | `onPress` | `(url: string) => void` | — | Called after the link is successfully opened |
-| `onError` | `(err: AdError) => void` | — | Called on link or image errors |
+| `onError` | `(err: AdError) => void` | — | Called on link, image, or video errors |
 | `theme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Color scheme |
 | `testID` | `string` | — | Test identifier |
 
@@ -306,6 +328,7 @@ type AdError =
   | { type: 'NO_LINK';    message?: string }  // No link provided for this platform
   | { type: 'LINK_FAILED'; message?: string } // Linking.openURL failed
   | { type: 'NO_IMAGE';   message?: string }  // Image failed to load
+  | { type: 'NO_VIDEO';   message?: string }  // Video failed to load
 ```
 
 ---

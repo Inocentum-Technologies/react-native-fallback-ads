@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { ViewStyle } from 'react-native';
 import { FallbackTextBannerAd, FallbackTextBannerAdProps } from './FallbackTextBannerAd';
 import { FallbackImageBannerAd, FallbackImageBannerAdProps } from './FallbackImageBannerAd';
@@ -16,6 +16,18 @@ export interface FallbackBannerAdProps {
   style?: ViewStyle;
   testID?: string;
   theme?: 'light' | 'dark' | 'auto';
+  /**
+   * Refresh mode.
+   * - 'manual': The ad is only refreshed via ref.current.refresh() or on mount.
+   * - 'auto': The ad is automatically refreshed every `refreshInterval` milliseconds.
+   * @default 'manual'
+   */
+  mode?: 'manual' | 'auto';
+  /**
+   * Refresh interval in milliseconds when mode is 'auto'.
+   * @default 5000
+   */
+  refreshInterval?: number;
 }
 
 export interface FallbackBannerAdRef {
@@ -30,6 +42,8 @@ export const FallbackBannerAd = forwardRef<FallbackBannerAdRef, FallbackBannerAd
   style,
   testID,
   theme = 'auto',
+  mode = 'manual',
+  refreshInterval = 5000,
 }, ref) => {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
 
@@ -39,6 +53,11 @@ export const FallbackBannerAd = forwardRef<FallbackBannerAdRef, FallbackBannerAd
       setCurrentIndex(randomIndex);
     }
   };
+
+  const refreshAdRef = useRef(refreshAd);
+  useEffect(() => {
+    refreshAdRef.current = refreshAd;
+  });
 
   useImperativeHandle(ref, () => ({
     refresh: refreshAd,
@@ -51,6 +70,15 @@ export const FallbackBannerAd = forwardRef<FallbackBannerAdRef, FallbackBannerAd
       refreshAd();
     }
   }, [dataLength]);
+
+  useEffect(() => {
+    if (mode === 'auto' && dataLength > 0) {
+      const interval = setInterval(() => {
+        refreshAdRef.current();
+      }, refreshInterval);
+      return () => clearInterval(interval);
+    }
+  }, [mode, refreshInterval, dataLength]);
 
   if (!data || data.length === 0) {
     return null;

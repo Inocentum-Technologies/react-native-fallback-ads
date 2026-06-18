@@ -3,5 +3,8 @@ export * from './components/FallbackImageBannerAd';
 export * from './components/FallbackBannerAd';
 export * from './components/FallbackMrecAd';
 export * from './components/FallbackFullscreenAd';
+export * from './components/FallbackFullscreenImageAd';
+export * from './components/FallbackFullscreenVideoAd';
+export * from './components/FallbackRewardedVideoAd';
 export * from './hooks/useFallbackLinkResolver';
 export * from './utils/resolveLink';
