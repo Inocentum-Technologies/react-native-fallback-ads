@@ -21,6 +21,9 @@ When your primary ad SDK fails to load — network errors, no fill, SDK initiali
   - [FallbackImageBannerAd](#fallbackimagebannerad)
   - [FallbackMrecAd](#fallbackmrecad)
   - [FallbackFullscreenAd](#fallbackfullscreenad)
+    - [FallbackFullscreenImageAd](#fallbackfullscreenimagead)
+    - [FallbackFullscreenVideoAd](#fallbackfullscreenvideoad)
+    - [FallbackRewardedVideoAd](#fallbackrewardedvideoad)
 - [Utilities](#utilities)
   - [resolveLink](#resolvelink)
 - [Link Resolution](#link-resolution)
@@ -37,8 +40,8 @@ When your primary ad SDK fails to load — network errors, no fill, SDK initiali
 - ✅ **Zero native code** — pure JS/TS, works with Expo Go and managed workflow
 - 🎨 **Light / dark / auto theme** support on every component
 - 🔁 **Multi-image cycling** with smooth animations (`flip`, `3d-flip`, `fade`, `none`)
-- 📱 **Platform-aware links** — set separate Android & iOS deep-links, or a single common URL
 - 🖼 **Fullscreen interstitial** with configurable close-button delay and countdown badge
+- 🎁 **Rewarded video ad** support with custom watch-to-end or close-delay modes
 - ♿ **Accessible** — every component ships with proper `accessibilityRole` and `accessibilityLabel`
 - 🔧 **Fully typed** — complete TypeScript definitions included
 
@@ -229,13 +232,7 @@ All other props are identical to [`FallbackImageBannerAd`](#fallbackimagebannera
 
 ### FallbackFullscreenAd
 
-A full-screen interstitial ad rendered inside a React Native `Modal`. Supports portrait and landscape image or video formats. 
-
-#### Video & Rewarded Ad Features
-- **Orientation Lock for Videos**: You can specify separate portrait and landscape video sources. To avoid jarring visual changes, the video's active orientation is locked at the moment it starts playing based on the device's current orientation. It continues playing in that orientation even if the device rotates.
-- **Rewarded Ad Mode**: Provide an `onReward` callback and set `rewarded={true}`.
-  - *Watch to End (Default)*: User must watch the video until it completes to earn the reward. When the video ends, the reward is granted and the ad automatically closes.
-  - *Explicit Close Delay*: If `closeDelay` is explicitly set (e.g., `closeDelay={15}`), a countdown is shown. When the countdown completes, the ad automatically closes and grants the reward.
+A unified, full-screen interstitial ad component rendered inside a React Native `Modal`. Under the hood, it automatically delegates to either `FallbackFullscreenImageAd` or `FallbackFullscreenVideoAd` based on whether video props (`portraitVideo` or `landscapeVideo`) are provided.
 
 ```tsx
 import { useState } from 'react';
@@ -243,7 +240,7 @@ import { FallbackFullscreenAd } from 'react-native-fallback-ads';
 
 const [adVisible, setAdVisible] = useState(false);
 
-// Image Ad Example
+// Automatically renders FallbackFullscreenImageAd
 <FallbackFullscreenAd
   visible={adVisible}
   portraitImage={require('./assets/interstitial-portrait.png')}
@@ -254,16 +251,52 @@ const [adVisible, setAdVisible] = useState(false);
   onDismiss={() => setAdVisible(false)}
 />
 
-// Rewarded Video Ad Example (Watch to completion)
+// Automatically renders FallbackFullscreenVideoAd
 <FallbackFullscreenAd
   visible={adVisible}
   portraitVideo={require('./assets/video-portrait.mp4')}
   landscapeVideo={require('./assets/video-landscape.mp4')}
-  rewarded={true}
-  onReward={() => console.log('Reward Earned!')}
+  showCloseButton={true}
+  closeDelay={5}
+  link="https://example.com/promo"
   onDismiss={() => setAdVisible(false)}
-  onError={(err) => console.warn('Ad error:', err)}
-  theme="auto"
+/>
+```
+
+#### Props
+
+Since `FallbackFullscreenAd` serves as a wrapper, it accepts all props for both image and video fullscreen ads:
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `visible` | `boolean` | `true` | Controls modal visibility |
+| `portraitImage` | `ImageSourcePropType` | — | Portrait image source. (Used for Image Ads) |
+| `landscapeImage` | `ImageSourcePropType` | — | Landscape image source. Falls back to `portraitImage`. (Used for Image Ads) |
+| `portraitVideo` | `any` | — | Portrait video source (require or URI object). (Used for Video Ads) |
+| `landscapeVideo` | `any` | — | Landscape video source. Falls back to `portraitVideo`. (Used for Video Ads) |
+| `onDismiss` | `() => void` | — | Called when the close button is pressed or ad is dismissed |
+| `link` | `string` | — | Destination URL when the ad is tapped |
+| `onPress` | `(resolvedUrl: string) => void` | — | Callback after the link is successfully opened |
+| `onError` | `(err: AdError) => void` | — | Callback on link, image, or video loading/playback errors |
+| `showCloseButton` | `boolean` | `true` | Show/hide the close button |
+| `closeDelay` | `number` | `5` | Countdown in seconds before close button is active |
+| `theme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Theme scheme |
+| `testID` | `string` | — | Test identifier |
+
+---
+
+### FallbackFullscreenImageAd
+
+Specifically renders a fullscreen image ad.
+
+```tsx
+import { FallbackFullscreenImageAd } from 'react-native-fallback-ads';
+
+<FallbackFullscreenImageAd
+  visible={visible}
+  portraitImage={require('./assets/portrait.png')}
+  landscapeImage={require('./assets/landscape.png')}
+  onDismiss={() => setVisible(false)}
 />
 ```
 
@@ -271,21 +304,119 @@ const [adVisible, setAdVisible] = useState(false);
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `portraitImage` | `ImageSourcePropType` | — | Image shown in portrait orientation. Required if video is not used |
-| `landscapeImage` | `ImageSourcePropType` | — | Image shown in landscape; falls back to `portraitImage` |
-| `portraitVideo` | `any` | — | Video source (local require or URL object) played in portrait. Requires `react-native-video` or `expo-av` in the host app |
-| `landscapeVideo` | `any` | — | Video source played in landscape; falls back to `portraitVideo` |
-| `rewarded` | `boolean` | `false` | Whether this is a rewarded video ad |
-| `onReward` | `() => void` | — | Callback triggered when the reward is earned |
 | `visible` | `boolean` | `true` | Controls modal visibility |
-| `onDismiss` | `() => void` | — | Called when the close button is pressed, the back button is tapped, or a rewarded video completes |
-| `showCloseButton` | `boolean` | `true` | Whether to show the close button |
-| `closeDelay` | `number` | `5` (image) / — (video) | Seconds before the close button becomes tappable (normal ads), or seconds before auto-closing and rewarding (rewarded ads) |
-| `link` | `string` | — | The destination link to open when the ad is tapped |
-| `onPress` | `(url: string) => void` | — | Called after the link is successfully opened |
-| `onError` | `(err: AdError) => void` | — | Called on link, image, or video errors |
-| `theme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Color scheme |
+| `portraitImage` | `ImageSourcePropType` | — | Portrait image source |
+| `landscapeImage` | `ImageSourcePropType` | — | Landscape image source. Falls back to `portraitImage` |
+| `onDismiss` | `() => void` | — | Called when the close button is pressed |
+| `link` | `string` | — | Destination URL when the ad is tapped |
+| `onPress` | `(resolvedUrl: string) => void` | — | Callback after the link is successfully opened |
+| `onError` | `(err: { type: 'NO_LINK' \| 'LINK_FAILED' \| 'NO_IMAGE'; message?: string }) => void` | — | Callback on link or image load errors |
+| `showCloseButton` | `boolean` | `true` | Show/hide the close button |
+| `closeDelay` | `number` | `5` | Countdown in seconds before close button is active |
+| `theme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Theme scheme |
 | `testID` | `string` | — | Test identifier |
+
+---
+
+### FallbackFullscreenVideoAd
+
+Specifically renders a fullscreen video ad.
+
+#### Supported Video Players
+To keep this library lightweight and avoid native linking conflicts, video players are not bundled directly. Instead, `FallbackFullscreenVideoAd` dynamically detects and supports the following player libraries if they are installed in the host project:
+- **`react-native-video`**
+- **`expo-video`**
+
+> [!IMPORTANT]
+> You must install either `react-native-video` or `expo-video` to use the fullscreen video ad component.
+
+#### Steps to Use the Fullscreen Video Component:
+1. **Install a supported video library**:
+   Choose and install one of the supported video players in your host project:
+   - **React Native CLI (or bare Expo)**:
+     ```bash
+     npm install react-native-video
+     # or
+     yarn add react-native-video
+     ```
+     *Note: Ensure the library is properly linked. For modern React Native versions, this is done automatically. If you're on an older version, run `pod install` inside the `ios` directory.*
+   - **Expo Managed Workflow**:
+     ```bash
+     npx expo install expo-video
+     ```
+2. **Import the component**:
+   ```tsx
+   import { FallbackFullscreenVideoAd } from 'react-native-fallback-ads';
+   ```
+3. **Provide Video Sources**:
+   Pass local requires (e.g., `require('./assets/ad.mp4')`) or remote source objects (e.g., `{ uri: 'https://example.com/ad.mp4' }`) to `portraitVideo` and `landscapeVideo` props.
+4. **Orientation Lock Behavior**:
+   To prevent visual glitches and layout shifts, the component locks its orientation to whichever mode (portrait or landscape) the device is in when the video begins playing. Rotating the phone during playback scales the video but does not switch the active source or reset playback progress.
+
+```tsx
+import { FallbackFullscreenVideoAd } from 'react-native-fallback-ads';
+
+<FallbackFullscreenVideoAd
+  visible={visible}
+  portraitVideo={require('./assets/video-portrait.mp4')}
+  landscapeVideo={require('./assets/video-landscape.mp4')}
+  onDismiss={() => setVisible(false)}
+  closeDelay={5}
+/>
+```
+
+#### Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `visible` | `boolean` | `true` | Controls modal visibility |
+| `portraitVideo` | `any` | — | Portrait video source (require or URI object) |
+| `landscapeVideo` | `any` | — | Landscape video source. Falls back to `portraitVideo` |
+| `onDismiss` | `() => void` | — | Called when the close button is pressed |
+| `link` | `string` | — | Destination URL when the ad is tapped |
+| `onPress` | `(resolvedUrl: string) => void` | — | Callback after the link is successfully opened |
+| `onError` | `(err: { type: 'NO_LINK' \| 'LINK_FAILED' \| 'NO_VIDEO'; message?: string }) => void` | — | Callback on link or video loading/playback errors |
+| `showCloseButton` | `boolean` | `true` | Show/hide the close button |
+| `closeDelay` | `number` | `5` | Countdown in seconds before close button is active |
+| `theme` | `'light' \| 'dark' \| 'auto'` | `'auto'` | Theme scheme |
+| `forceWatchToEnd` | `boolean` | `false` | If true, countdown doesn't run and the close button is hidden until the video ends or parent dismisses the ad |
+| `onVideoEnd` | `() => void` | — | Callback when the video finishes playing |
+| `onCountdownEnd` | `() => void` | — | Callback when the close delay countdown reaches 0 |
+| `closeButtonAccessory` | `React.ReactNode` | — | Optional React node to render next to the close button (e.g. badges) |
+| `testID` | `string` | — | Test identifier |
+
+---
+
+### FallbackRewardedVideoAd
+
+A specialized wrapper around `FallbackFullscreenVideoAd` tailored for rewarded ad placements. It provides reward hooks and supports two modes of interaction.
+
+#### Rewarded Behavior and Modes:
+- **Watch to End Mode (Default - no `closeDelay` provided)**:
+  The user must watch the video until completion to earn the reward. The close button is hidden during playback, and once the video finishes, `onReward` is triggered and the ad automatically closes.
+- **Countdown Mode (with `closeDelay` provided, e.g. `closeDelay={15}`)**:
+  A countdown is shown. When the countdown completes, a green "Rewarded" badge appears next to the close button, indicating they can now close the ad to claim their reward. The ad remains open until the user taps the close button, at which point the `onReward` callback is triggered.
+
+```tsx
+import { FallbackRewardedVideoAd } from 'react-native-fallback-ads';
+
+<FallbackRewardedVideoAd
+  visible={visible}
+  portraitVideo={require('./assets/rewarded-portrait.mp4')}
+  onReward={() => console.log('User rewarded!')}
+  onDismiss={() => setVisible(false)}
+/>
+```
+
+#### Props
+
+Inherits all props from `FallbackFullscreenVideoAdProps` except `onVideoEnd`, `onCountdownEnd`, `forceWatchToEnd`, and `closeButtonAccessory`.
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `onReward` | `() => void` | — | Callback triggered when the reward condition is met |
+| `onDismiss` | `() => void` | — | Callback when the ad is closed (either automatically after completion or manually after countdown) |
+| `closeDelay` | `number` | — | If provided, allows closing after this many seconds to get reward. If omitted, forces watching to completion |
 
 ---
 
@@ -358,6 +489,9 @@ import type {
   FallbackImageBannerAdProps,
   FallbackMrecAdProps,
   FallbackFullscreenAdProps,
+  FallbackFullscreenImageAdProps,
+  FallbackFullscreenVideoAdProps,
+  FallbackRewardedVideoAdProps,
 
   // Data types
   BannerAdItem,
